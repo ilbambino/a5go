@@ -1,9 +1,9 @@
 package a5go
 
 import (
-	"a5go/cells"
-	"a5go/core"
-	"a5go/traversal"
+	"a5go/internal/cells"
+	"a5go/internal/core"
+	"a5go/internal/traversal"
 )
 
 type CellBoundaryOptions = cells.CellBoundaryOptions
@@ -19,6 +19,10 @@ const (
 
 func CellToBoundary(cellID uint64, options ...CellBoundaryOptions) []LonLat {
 	return cells.CellToBoundary(cellID, options...)
+}
+
+func Boundary(cellID uint64, opts CellBoundaryOptions) []LonLat {
+	return cells.Boundary(cellID, opts)
 }
 
 func CellToLonLat(cellID uint64) LonLat {
@@ -41,28 +45,56 @@ func U64ToHex(index uint64) string {
 	return core.U64ToHex(index)
 }
 
+func Parse(hex string) (Cell, error) {
+	return ParseCell(hex)
+}
+
 func CellToParent(index uint64, parentResolution ...int) uint64 {
 	return core.CellToParent(index, parentResolution...)
+}
+
+func ParentAt(index uint64, parentResolution int) (uint64, error) {
+	return core.ParentAt(index, parentResolution)
 }
 
 func CellToChildren(index uint64, childResolution ...int) []uint64 {
 	return core.CellToChildren(index, childResolution...)
 }
 
+func ChildrenAt(index uint64, childResolution int) ([]uint64, error) {
+	return core.ChildrenAt(index, childResolution)
+}
+
 func GetResolution(index uint64) int {
 	return core.GetResolution(index)
+}
+
+func Resolution(index uint64) int {
+	return core.Resolution(index)
 }
 
 func GetRes0Cells() []uint64 {
 	return core.GetRes0Cells()
 }
 
+func Res0Cells() []uint64 {
+	return core.Res0Cells()
+}
+
 func GetNumCells(resolution int) float64 {
 	return core.GetNumCells(resolution)
 }
 
+func NumCells(resolution int) float64 {
+	return core.NumCells(resolution)
+}
+
 func GetNumChildren(parentResolution, childResolution int) float64 {
 	return core.GetNumChildren(parentResolution, childResolution)
+}
+
+func NumChildren(parentResolution, childResolution int) float64 {
+	return core.NumChildren(parentResolution, childResolution)
 }
 
 func CellArea(resolution int) float64 {

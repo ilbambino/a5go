@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"a5go/core"
-	"a5go/projections"
+	"a5go/internal/core"
+	"a5go/internal/projections"
 )
 
 var (

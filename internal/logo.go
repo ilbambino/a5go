@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"a5go/core"
+	"a5go/internal/core"
 	"fmt"
 )
 

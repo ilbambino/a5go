@@ -1,7 +1,7 @@
 package utils_test
 
 import (
-	"a5go/core"
+	"a5go/internal/core"
 	"a5go/internal/testutil"
 	"a5go/utils"
 	"math"

@@ -41,12 +41,12 @@ type tsResponse struct {
 }
 
 type tsLonLatResult struct {
-	Name               string      `json:"name"`
-	Resolution         int         `json:"resolution"`
-	LonLat             [2]float64  `json:"lonLat"`
-	LonLatToCellHex    string      `json:"lonLatToCellHex"`
-	CellToLonLat       [2]float64  `json:"cellToLonLat"`
-	CellToSpherical    [2]float64  `json:"cellToSpherical"`
+	Name               string       `json:"name"`
+	Resolution         int          `json:"resolution"`
+	LonLat             [2]float64   `json:"lonLat"`
+	LonLatToCellHex    string       `json:"lonLatToCellHex"`
+	CellToLonLat       [2]float64   `json:"cellToLonLat"`
+	CellToSpherical    [2]float64   `json:"cellToSpherical"`
 	CellToBoundary1    [][2]float64 `json:"cellToBoundary1"`
 	CellToBoundaryAuto [][2]float64 `json:"cellToBoundaryAuto"`
 }

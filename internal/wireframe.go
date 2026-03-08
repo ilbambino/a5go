@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"a5go/cells"
-	"a5go/core"
+	"a5go/internal/cells"
+	"a5go/internal/core"
 )
 
 func GenerateWireframe(resolution int, segments ...int) [][]core.LonLat {

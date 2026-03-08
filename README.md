@@ -2,7 +2,7 @@
 
 Go port of the [`a5`](https://github.com/felixpalmer/a5) spatial index from the upstream TypeScript reference implementation.
 
-The port was done as a direct translation of the existing implementation and fixtures, not a redesign. The code follows the same geometric and indexing model, with Go package boundaries adjusted where needed to avoid import cycles.
+The port was done as a direct translation of the existing implementation and fixtures, then refactored toward a more idiomatic Go API. The root `a5go` package is the intended public surface; implementation packages now live under `internal/`.
 
 ## Status
 
@@ -13,12 +13,13 @@ The port was done as a direct translation of the existing implementation and fix
 
 ## Layout
 
-- [`core`](./core): constants, coordinate transforms, serialization, hierarchy, compaction
-- [`cells`](./cells): cell indexing, center conversion, boundary generation, point containment
-- [`lattice`](./lattice): Hilbert and triangular lattice logic
-- [`projections`](./projections): authalic, gnomonic, polyhedral, dodecahedron, CRS
-- [`traversal`](./traversal): neighbors, grid disk, spherical cap
-- [`geometry`](./geometry): planar and spherical polygon helpers
+- [`api.go`](./api.go), [`public_types.go`](./public_types.go): public API, including `Cell` and `Point`
+- [`internal/core`](./internal/core): constants, coordinate transforms, serialization, hierarchy, compaction
+- [`internal/cells`](./internal/cells): cell indexing, center conversion, boundary generation, point containment
+- [`internal/lattice`](./internal/lattice): Hilbert and triangular lattice logic
+- [`internal/projections`](./internal/projections): authalic, gnomonic, polyhedral, dodecahedron, CRS
+- [`internal/traversal`](./internal/traversal): neighbors, grid disk, spherical cap
+- [`internal/geometry`](./internal/geometry): planar and spherical polygon helpers
 - [`internal`](./internal): wireframe/helper utilities mirrored from the TS repo
 
 ## Usage
@@ -33,9 +34,10 @@ import (
 )
 
 func main() {
-	cell := a5go.LonLatToCell(a5go.LonLat{-3.7038, 40.4168}, 6)
-	fmt.Println(a5go.U64ToHex(cell))
-	fmt.Println(a5go.CellToLonLat(cell))
+	point := a5go.Point{Lon: -3.7038, Lat: 40.4168}
+	cell := point.Cell(6)
+	fmt.Println(cell.Hex())
+	fmt.Println(cell.Center())
 }
 ```
 

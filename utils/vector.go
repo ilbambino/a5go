@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"a5go/core"
+	"a5go/internal/core"
 	"math"
 )
 

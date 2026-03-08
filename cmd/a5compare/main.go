@@ -86,18 +86,26 @@ type capFixture struct {
 
 func main() {
 	var (
-		tsRepo      = flag.String("ts-repo", "../a5", "path to the official TypeScript a5 repo")
+		tsRepo      = flag.String("ts-repo", "", "path to a local checkout of the official TypeScript a5 repo")
 		pointsLimit = flag.Int("points", 50, "number of populated-place points to compare")
 		maxRes      = flag.Int("max-res", 8, "highest resolution to compare for lon/lat indexing")
 	)
 	flag.Parse()
+
+	repoPath := strings.TrimSpace(*tsRepo)
+	if repoPath == "" {
+		repoPath = strings.TrimSpace(os.Getenv("A5_TS_REPO"))
+	}
+	if repoPath == "" {
+		fatalf("missing TypeScript repo path; pass --ts-repo /path/to/a5 or set A5_TS_REPO")
+	}
 
 	request, err := buildRequest(*pointsLimit, *maxRes)
 	if err != nil {
 		fatalf("%v", err)
 	}
 
-	response, err := runTS(*tsRepo, request)
+	response, err := runTS(repoPath, request)
 	if err != nil {
 		fatalf("%v", err)
 	}

@@ -1,6 +1,6 @@
 # a5go
 
-Go port of the `a5` spatial index from the TypeScript reference implementation in [`../a5`](../a5).
+Go port of the [`a5`](https://github.com/felixpalmer/a5) spatial index from the upstream TypeScript reference implementation.
 
 The port was done as a direct translation of the existing implementation and fixtures, not a redesign. The code follows the same geometric and indexing model, with Go package boundaries adjusted where needed to avoid import cycles.
 
@@ -47,35 +47,39 @@ go test ./...
 
 ## Comparing Against The Official TypeScript Build
 
-This repo includes a local comparison tool that runs the official TypeScript implementation from the sibling [`../a5`](../a5) repo and checks it against the Go port on canonical datasets.
+This repo includes a local comparison tool that runs the official TypeScript implementation from a local checkout of the upstream repo, [`felixpalmer/a5`](https://github.com/felixpalmer/a5), and checks it against the Go port on canonical datasets.
 
 ### Prerequisite
 
-The TypeScript repo must be built first:
+First, clone and build the upstream TypeScript repo somewhere on your machine:
 
 ```bash
-cd ../a5
+git clone https://github.com/felixpalmer/a5.git
+cd a5
 npm install
 npm run build
 ```
 
-The comparison tool loads `../a5/dist/a5.cjs`. It does not reimplement TS behavior in Go; it invokes the official build and compares outputs.
+The comparison tool loads `<your-a5-checkout>/dist/a5.cjs`. It does not reimplement TS behavior in Go; it invokes the official build and compares outputs.
 
 ### Run
 
 ```bash
-go run ./cmd/a5compare --ts-repo ../a5
+go run ./cmd/a5compare --ts-repo /path/to/a5
 ```
 
 Useful flags:
 
+- `--ts-repo`: path to a local checkout of [`felixpalmer/a5`](https://github.com/felixpalmer/a5)
 - `--points`: number of populated-place inputs to compare
 - `--max-res`: highest resolution to compare for `lonLatToCell`
+
+You can also set `A5_TS_REPO=/path/to/a5` instead of passing `--ts-repo`.
 
 Example:
 
 ```bash
-go run ./cmd/a5compare --ts-repo ../a5 --points 100 --max-res 10
+A5_TS_REPO=/path/to/a5 go run ./cmd/a5compare --points 100 --max-res 10
 ```
 
 The command compares:

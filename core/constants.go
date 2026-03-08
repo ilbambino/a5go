@@ -20,6 +20,6 @@ var (
 
 const (
 	AuthalicRadiusEarth = 6371007.2
+	// Match the TS/JS evaluated value exactly so downstream fixtures compare byte-for-byte.
+	AuthalicAreaEarth = 510065624779439.1
 )
-
-var AuthalicAreaEarth = 4 * math.Pi * AuthalicRadiusEarth * AuthalicRadiusEarth

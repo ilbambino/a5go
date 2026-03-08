@@ -2,19 +2,19 @@ package cells
 
 import (
 	"a5go/core"
+	"a5go/geometry"
 	"a5go/lattice"
 	"a5go/projections"
 	"math"
 )
 
 type CellBoundaryOptions struct {
-	ClosedRing  bool
-	Segments    int
+	ClosedRing   bool
+	Segments     int
 	AutoSegments bool
 }
 
 var (
-	rotation     core.Mat2
 	dodecahedron = projections.NewDodecahedronProjection()
 )
 
@@ -84,7 +84,7 @@ func lonLatToEstimate(lonLat core.LonLat, resolution int) core.A5Cell {
 
 	if quintant != 0 {
 		extraAngle := 2 * float64(core.PiOver5) * float64(quintant)
-		rotation = core.Mat2FromRotation(-extraAngle)
+		rotation := core.Mat2FromRotation(-extraAngle)
 		dodecPoint = core.Mat2Transform(rotation, dodecPoint)
 	}
 
@@ -98,24 +98,24 @@ func lonLatToEstimate(lonLat core.LonLat, resolution int) core.A5Cell {
 	return core.A5Cell{S: s, Segment: segment, Origin: &origin, Resolution: resolution}
 }
 
-func getPentagon(cell core.A5Cell) *geometryAdapter {
+func getPentagon(cell core.A5Cell) *geometry.PentagonShape {
 	quintant, orientation := core.SegmentToQuintant(cell.Segment, cell.Origin)
 	if cell.Resolution == core.FirstHilbertResolution-1 {
-		return wrapPentagon(core.GetQuintantVertices(quintant))
+		return core.GetQuintantVertices(quintant)
 	}
 	if cell.Resolution == core.FirstHilbertResolution-2 {
-		return wrapPentagon(core.GetFaceVertices())
+		return core.GetFaceVertices()
 	}
 
 	hilbertResolution := cell.Resolution - core.FirstHilbertResolution + 1
 	anchor := lattice.SToAnchor(cell.S, hilbertResolution, orientation)
-	return wrapPentagon(core.GetPentagonVertices(hilbertResolution, quintant, anchor))
+	return core.GetPentagonVertices(hilbertResolution, quintant, anchor)
 }
 
 func CellToSpherical(cellID uint64) core.Spherical {
 	cell := core.Deserialize(cellID)
 	pentagon := getPentagon(cell)
-	center := pentagon.GetCenter()
+	center := pentagon.Center()
 	return dodecahedron.Inverse(core.Face(center), cell.Origin.ID)
 }
 
@@ -140,13 +140,10 @@ func CellToBoundary(cellID uint64, options ...CellBoundaryOptions) []core.LonLat
 	}
 
 	cell := core.Deserialize(cellID)
-	segments := opts.Segments
-	if opts.AutoSegments {
-		segments = int(math.Max(1, math.Pow(2, float64(6-cell.Resolution))))
-	}
+	segments := resolveBoundarySegments(cell.Resolution, opts)
 
 	pentagon := getPentagon(cell).SplitEdges(segments)
-	vertices := pentagon.GetVertices()
+	vertices := pentagon.Vertices()
 	boundary := make([]core.LonLat, len(vertices))
 	for i, vertex := range vertices {
 		unprojected := dodecahedron.Inverse(core.Face(vertex), cell.Origin.ID)
@@ -167,4 +164,14 @@ func A5CellContainsPoint(cell core.A5Cell, point core.LonLat) float64 {
 	spherical := core.FromLonLat(point)
 	projectedPoint := dodecahedron.Forward(spherical, cell.Origin.ID)
 	return pentagon.ContainsPoint([2]float64(projectedPoint))
+}
+
+func resolveBoundarySegments(resolution int, opts CellBoundaryOptions) int {
+	if opts.AutoSegments {
+		return int(math.Max(1, math.Pow(2, float64(6-resolution))))
+	}
+	if opts.Segments <= 0 {
+		return 1
+	}
+	return opts.Segments
 }

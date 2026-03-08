@@ -27,7 +27,7 @@ func reverseFaces(values []Face) {
 	}
 }
 
-func (p *PentagonShape) GetArea() float64 {
+func (p *PentagonShape) Area() float64 {
 	signedArea := 0.0
 	n := len(p.vertices)
 	for i := 0; i < n; i++ {
@@ -38,10 +38,10 @@ func (p *PentagonShape) GetArea() float64 {
 }
 
 func (p *PentagonShape) isWindingCorrect() bool {
-	return p.GetArea() >= 0
+	return p.Area() >= 0
 }
 
-func (p *PentagonShape) GetVertices() Pentagon {
+func (p *PentagonShape) Vertices() Pentagon {
 	return p.vertices
 }
 
@@ -105,7 +105,7 @@ func (p *PentagonShape) Clone() *PentagonShape {
 	return NewPentagonShape(vertices)
 }
 
-func (p *PentagonShape) GetCenter() Face {
+func (p *PentagonShape) Center() Face {
 	n := float64(len(p.vertices))
 	center := Face{0, 0}
 	for _, vertex := range p.vertices {
@@ -113,6 +113,18 @@ func (p *PentagonShape) GetCenter() Face {
 		center[1] += vertex[1] / n
 	}
 	return center
+}
+
+func (p *PentagonShape) GetArea() float64 {
+	return p.Area()
+}
+
+func (p *PentagonShape) GetVertices() Pentagon {
+	return p.Vertices()
+}
+
+func (p *PentagonShape) GetCenter() Face {
+	return p.Center()
 }
 
 func (p *PentagonShape) ContainsPoint(point Face) float64 {

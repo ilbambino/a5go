@@ -6,7 +6,6 @@ import (
 )
 
 var (
-	helperRotation     core.Mat2
 	helperDodecahedron = projections.NewDodecahedronProjection()
 )
 
@@ -21,7 +20,7 @@ func LonLatToFace(lonLat core.LonLat, resolution int, centroid ...core.LonLat) c
 	}
 
 	rotations := []int{0, 0, 9, 6, 7, 6, 5, 4, 7, 7, 9, 0}
-	helperRotation = core.Mat2FromRotation(float64(rotations[origin.ID])*float64(core.PiOver5) + float64(origin.Angle))
+	helperRotation := core.Mat2FromRotation(float64(rotations[origin.ID])*float64(core.PiOver5) + float64(origin.Angle))
 
 	dodecPoint := helperDodecahedron.Forward(spherical, origin.ID)
 	dodecPoint = core.Mat2Transform(helperRotation, dodecPoint)

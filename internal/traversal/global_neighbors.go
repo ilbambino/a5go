@@ -41,7 +41,11 @@ func addNeighbor(ctx *neighborContext, neighborTriple lattice.Triple, orientatio
 	if s == nil || *s >= ctx.maxS {
 		return
 	}
-	ctx.neighborSet[core.Serialize(core.A5Cell{Origin: neighborOrigin, Segment: neighborSegment, S: *s, Resolution: ctx.resolution})] = struct{}{}
+	id, err := core.Serialize(core.A5Cell{Origin: neighborOrigin, Segment: neighborSegment, S: *s, Resolution: ctx.resolution})
+	if err != nil {
+		panic(err)
+	}
+	ctx.neighborSet[id] = struct{}{}
 }
 
 func addDeltaNeighbors(ctx *neighborContext, base lattice.Triple, deltas []neighborDelta, orientation lattice.Orientation, neighborOrigin *core.Origin, neighborSegment int) {
@@ -79,7 +83,11 @@ func GetGlobalCellNeighbors(cellID uint64, edgeOnly bool) []uint64 {
 	}
 
 	for _, neighborS := range FindQuintantNeighborS(triple, uvSourceAnchor, cell.S, hilbertRes, sourceOrientation, ctx.edgeOnly) {
-		ctx.neighborSet[core.Serialize(core.A5Cell{Origin: cell.Origin, Segment: cell.Segment, S: neighborS, Resolution: cell.Resolution})] = struct{}{}
+		id, err := core.Serialize(core.A5Cell{Origin: cell.Origin, Segment: cell.Segment, S: neighborS, Resolution: cell.Resolution})
+		if err != nil {
+			panic(err)
+		}
+		ctx.neighborSet[id] = struct{}{}
 	}
 
 	parity := lattice.TripleParity(triple)
@@ -104,7 +112,7 @@ func GetGlobalCellNeighbors(cellID uint64, edgeOnly bool) []uint64 {
 
 	if triple.Y == ctx.maxRow {
 		adj := core.FaceAdjacency[cell.Origin.ID][sourceQuintant]
-		adjOrigin := core.Origins[adj[0]]
+		adjOrigin := &core.Origins[adj[0]]
 		adjSegment, adjOrientation := core.QuintantToSegment(adj[1], adjOrigin)
 		mirroredBase := lattice.Triple{X: triple.Z, Y: ctx.maxRow, Z: triple.X}
 		addDeltaNeighbors(ctx, mirroredBase, crossFaceDeltas[parity], adjOrientation, adjOrigin, adjSegment)
@@ -127,12 +135,12 @@ func GetGlobalCellNeighbors(cellID uint64, edgeOnly bool) []uint64 {
 	if triple.X == -ctx.maxRow && triple.Y == ctx.maxRow && triple.Z == 0 {
 		prevQuintant := (sourceQuintant - 1 + 5) % 5
 		prevAdj := core.FaceAdjacency[cell.Origin.ID][prevQuintant]
-		prevAdjOrigin := core.Origins[prevAdj[0]]
+		prevAdjOrigin := &core.Origins[prevAdj[0]]
 		prevAdjSegment, prevAdjOrientation := core.QuintantToSegment(prevAdj[1], prevAdjOrigin)
 		addNeighbor(ctx, triple, prevAdjOrientation, prevAdjOrigin, prevAdjSegment)
 
 		crossFace := core.FaceAdjacency[cell.Origin.ID][sourceQuintant]
-		crossOrigin := core.Origins[crossFace[0]]
+		crossOrigin := &core.Origins[crossFace[0]]
 		nextCrossQuintant := (crossFace[1] + 1) % 5
 		crossSegment, crossOrientation := core.QuintantToSegment(nextCrossQuintant, crossOrigin)
 		addNeighbor(ctx, triple, crossOrientation, crossOrigin, crossSegment)

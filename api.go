@@ -33,7 +33,7 @@ func CellToSpherical(cellID uint64) Spherical {
 	return cells.CellToSpherical(cellID)
 }
 
-func LonLatToCell(lonLat LonLat, resolution int) uint64 {
+func LonLatToCell(lonLat LonLat, resolution int) (uint64, error) {
 	return cells.LonLatToCell(lonLat, resolution)
 }
 
@@ -49,7 +49,7 @@ func Parse(hex string) (Cell, error) {
 	return ParseCell(hex)
 }
 
-func CellToParent(index uint64, parentResolution ...int) uint64 {
+func CellToParent(index uint64, parentResolution ...int) (uint64, error) {
 	return core.CellToParent(index, parentResolution...)
 }
 
@@ -57,7 +57,7 @@ func ParentAt(index uint64, parentResolution int) (uint64, error) {
 	return core.ParentAt(index, parentResolution)
 }
 
-func CellToChildren(index uint64, childResolution ...int) []uint64 {
+func CellToChildren(index uint64, childResolution ...int) ([]uint64, error) {
 	return core.CellToChildren(index, childResolution...)
 }
 
@@ -73,11 +73,11 @@ func Resolution(index uint64) int {
 	return core.Resolution(index)
 }
 
-func GetRes0Cells() []uint64 {
+func GetRes0Cells() ([]uint64, error) {
 	return core.GetRes0Cells()
 }
 
-func Res0Cells() []uint64 {
+func Res0Cells() ([]uint64, error) {
 	return core.Res0Cells()
 }
 
@@ -105,7 +105,7 @@ func Compact(cells []uint64) []uint64 {
 	return core.Compact(cells)
 }
 
-func Uncompact(cells []uint64, targetResolution int) []uint64 {
+func Uncompact(cells []uint64, targetResolution int) ([]uint64, error) {
 	return core.Uncompact(cells, targetResolution)
 }
 

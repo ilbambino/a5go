@@ -1,17 +1,18 @@
 package core
 
 import (
+	"errors"
 	"sort"
 )
 
-func Uncompact(cells []uint64, targetResolution int) []uint64 {
+func Uncompact(cells []uint64, targetResolution int) ([]uint64, error) {
 	n := 0
 	resolutions := make([]int, len(cells))
 	for i, cell := range cells {
 		resolution := GetResolution(cell)
 		resolutionDiff := targetResolution - resolution
 		if resolutionDiff < 0 {
-			panicString("Cannot uncompact cell at resolution " + itoa(resolution) + " to lower resolution " + itoa(targetResolution))
+			return nil, errors.New("cannot uncompact cell at resolution " + itoa(resolution) + " to lower resolution " + itoa(targetResolution))
 		}
 		resolutions[i] = resolution
 		n += int(GetNumChildren(resolution, targetResolution))
@@ -25,12 +26,15 @@ func Uncompact(cells []uint64, targetResolution int) []uint64 {
 		if numChildren == 1 {
 			result[offset] = cell
 		} else {
-			children := CellToChildren(cell, targetResolution)
+			children, err := CellToChildren(cell, targetResolution)
+			if err != nil {
+				return nil, err
+			}
 			copy(result[offset:], children)
 		}
 		offset += numChildren
 	}
-	return result
+	return result, nil
 }
 
 func Compact(cells []uint64) []uint64 {
@@ -90,7 +94,10 @@ func Compact(cells []uint64) []uint64 {
 				}
 
 				if hasAllSiblings {
-					parent := CellToParent(cell)
+					parent, err := CellToParent(cell)
+					if err != nil {
+						panic(err)
+					}
 					result = append(result, parent)
 					i += expectedChildren
 					changed = true

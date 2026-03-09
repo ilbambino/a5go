@@ -50,7 +50,11 @@ func SphericalCap(cellID uint64, radius float64) []uint64 {
 
 	startCell := cellID
 	if coarseRes < targetRes {
-		startCell = core.CellToParent(cellID, coarseRes)
+		parent, err := core.CellToParent(cellID, coarseRes)
+		if err != nil {
+			panic(err)
+		}
+		startCell = parent
 	}
 	coarseCellRadius := EstimateCellRadius(coarseRes)
 	hExpanded := MetersToH(radius + coarseCellRadius)
@@ -95,7 +99,11 @@ func SphericalCap(cellID uint64, radius float64) []uint64 {
 			} else if h > hOuter {
 				continue
 			} else {
-				nextBoundary = append(nextBoundary, core.CellToChildren(cell, res+1)...)
+				children, err := core.CellToChildren(cell, res+1)
+				if err != nil {
+					panic(err)
+				}
+				nextBoundary = append(nextBoundary, children...)
 			}
 		}
 		boundary = nextBoundary

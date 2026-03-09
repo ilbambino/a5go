@@ -19,7 +19,10 @@ func ChildrenAt(index uint64, childResolution int) ([]uint64, error) {
 	newOrigins := []*Origin{cell.Origin}
 	newSegments := []int{cell.Segment}
 	if currentResolution == -1 {
-		newOrigins = Origins
+		newOrigins = make([]*Origin, len(Origins))
+		for i := range Origins {
+			newOrigins[i] = &Origins[i]
+		}
 	}
 	if (currentResolution == -1 && childResolution > 0) || currentResolution == 0 {
 		newSegments = []int{0, 1, 2, 3, 4}
@@ -40,7 +43,11 @@ func ChildrenAt(index uint64, childResolution int) ([]uint64, error) {
 		for _, newSegment := range newSegments {
 			for i := 0; i < childrenCount; i++ {
 				newS := shiftedS + uint64(i)
-				children = append(children, Serialize(A5Cell{Origin: newOrigin, Segment: newSegment, S: newS, Resolution: childResolution}))
+				child, err := Serialize(A5Cell{Origin: newOrigin, Segment: newSegment, S: newS, Resolution: childResolution})
+				if err != nil {
+					return nil, err
+				}
+				children = append(children, child)
 			}
 		}
 	}
@@ -66,17 +73,13 @@ func ParentAt(index uint64, parentResolution int) (uint64, error) {
 
 	resolutionDiff := currentResolution - parentResolution
 	shiftedS := cell.S >> uint(2*resolutionDiff)
-	return Serialize(A5Cell{Origin: cell.Origin, Segment: cell.Segment, S: shiftedS, Resolution: parentResolution}), nil
+	return Serialize(A5Cell{Origin: cell.Origin, Segment: cell.Segment, S: shiftedS, Resolution: parentResolution})
 }
 
 func Resolution(index uint64) int {
 	return GetResolution(index)
 }
 
-func Res0Cells() []uint64 {
-	children, err := ChildrenAt(WorldCell, 0)
-	if err != nil {
-		panic(err)
-	}
-	return children
+func Res0Cells() ([]uint64, error) {
+	return ChildrenAt(WorldCell, 0)
 }

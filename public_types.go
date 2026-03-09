@@ -78,8 +78,12 @@ func (p Point) LonLat() LonLat {
 	return core.LonLat{p.Lon, p.Lat}
 }
 
-func (p Point) Cell(resolution int) Cell {
-	return Cell(LonLatToCell(p.LonLat(), resolution))
+func (p Point) Cell(resolution int) (Cell, error) {
+	cell, err := LonLatToCell(p.LonLat(), resolution)
+	if err != nil {
+		return 0, err
+	}
+	return Cell(cell), nil
 }
 
 func fromCoreLonLat(value core.LonLat) Point {

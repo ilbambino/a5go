@@ -42,7 +42,10 @@ func TestCompactFixtures(t *testing.T) {
 			continue
 		}
 		input := parseHexSlice(testCase.Input)
-		result := Uncompact(input, testCase.TargetResolution)
+		result, err := Uncompact(input, testCase.TargetResolution)
+		if err != nil {
+			t.Fatalf("Uncompact returned error: %v", err)
+		}
 		if len(result) != testCase.ExpectedCount {
 			t.Fatalf("Uncompact count mismatch")
 		}
@@ -58,14 +61,9 @@ func TestCompactFixtures(t *testing.T) {
 			continue
 		}
 		input := parseHexSlice(testCase.Input)
-		func() {
-			defer func() {
-				if recover() == nil {
-					t.Fatalf("expected uncompact panic")
-				}
-			}()
-			Uncompact(input, testCase.TargetResolution)
-		}()
+		if _, err := Uncompact(input, testCase.TargetResolution); err == nil {
+			t.Fatalf("expected uncompact error")
+		}
 	}
 
 	for _, testCase := range fixtures.Compact {
@@ -94,7 +92,10 @@ func TestCompactFixtures(t *testing.T) {
 				t.Fatalf("RoundTrip compact mismatch at %d", i)
 			}
 		}
-		uncompactResult := Uncompact(afterCompact, testCase.TargetResolution)
+		uncompactResult, err := Uncompact(afterCompact, testCase.TargetResolution)
+		if err != nil {
+			t.Fatalf("RoundTrip uncompact error: %v", err)
+		}
 		expectedCount := testCase.ExpectedCount
 		if expectedCount == 0 {
 			expectedCount = testCase.ExpectedFinalCount

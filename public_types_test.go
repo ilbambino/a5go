@@ -7,7 +7,10 @@ import (
 
 func TestPublicCellAndPointAPI(t *testing.T) {
 	point := a5go.Point{Lon: -3.7038, Lat: 40.4168}
-	cell := point.Cell(6)
+	cell, err := point.Cell(6)
+	if err != nil {
+		t.Fatalf("point cell: %v", err)
+	}
 	if cell.Resolution() != 6 {
 		t.Fatalf("resolution mismatch: got %d want 6", cell.Resolution())
 	}

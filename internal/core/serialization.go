@@ -1,5 +1,10 @@
 package core
 
+import (
+	"errors"
+	"math/bits"
+)
+
 const (
 	FirstHilbertResolution        = 2
 	MaxResolution                 = 30
@@ -12,51 +17,22 @@ func GetResolution(index uint64) int {
 	if index == 0 {
 		return -1
 	}
-
-	resolution := MaxResolution - 1
 	shifted := index >> 1
 	if shifted == 0 {
 		return -1
 	}
 
-	low32 := uint32(shifted & 0xFFFFFFFF)
-	var remaining uint32
-
-	if low32 == 0 {
-		shifted >>= 32
-		resolution -= 16
-		remaining = uint32(shifted)
-	} else {
-		remaining = low32
+	tz := bits.TrailingZeros64(shifted)
+	if tz >= 55 {
+		return 56 - tz
 	}
-
-	if (remaining & 0xFFFF) == 0 {
-		remaining >>= 16
-		resolution -= 8
-	}
-	if resolution >= 6 && (remaining&0xFF) == 0 {
-		remaining >>= 8
-		resolution -= 4
-	}
-	if resolution >= 4 && (remaining&0xF) == 0 {
-		remaining >>= 4
-		resolution -= 2
-	}
-	for resolution > -1 && (remaining&0b1) == 0 {
-		resolution--
-		if resolution < FirstHilbertResolution {
-			remaining >>= 1
-		} else {
-			remaining >>= 2
-		}
-	}
-	return resolution
+	return (58 - tz) / 2
 }
 
 func Deserialize(index uint64) A5Cell {
 	resolution := GetResolution(index)
 	if resolution == -1 {
-		return A5Cell{Origin: Origins[0], Segment: 0, S: 0, Resolution: resolution}
+		return A5Cell{Origin: &Origins[0], Segment: 0, S: 0, Resolution: resolution}
 	}
 
 	top6Bits := int(index >> 58)
@@ -64,10 +40,10 @@ func Deserialize(index uint64) A5Cell {
 	var segment int
 
 	if resolution == 0 {
-		origin = Origins[top6Bits]
+		origin = &Origins[top6Bits]
 		segment = 0
 	} else {
-		origin = Origins[top6Bits/5]
+		origin = &Origins[top6Bits/5]
 		segment = (top6Bits + origin.FirstQuintant) % 5
 	}
 
@@ -82,13 +58,13 @@ func Deserialize(index uint64) A5Cell {
 	return A5Cell{Origin: origin, Segment: segment, S: s, Resolution: resolution}
 }
 
-func Serialize(cell A5Cell) uint64 {
+func Serialize(cell A5Cell) (uint64, error) {
 	origin, segment, s, resolution := cell.Origin, cell.Segment, cell.S, cell.Resolution
 	if resolution > MaxResolution {
-		panicString("Resolution (" + itoa(resolution) + ") is too large")
+		return 0, errors.New("resolution exceeds maximum")
 	}
 	if resolution == -1 {
-		return WorldCell
+		return WorldCell, nil
 	}
 
 	var r uint
@@ -111,42 +87,34 @@ func Serialize(cell A5Cell) uint64 {
 		hilbertLevels := resolution - FirstHilbertResolution + 1
 		hilbertBits := uint(2 * hilbertLevels)
 		if s >= (uint64(1) << hilbertBits) {
-			panicString("S (" + uitoa(s) + ") is too large for resolution level " + itoa(resolution))
+			return 0, errors.New("S value too large for resolution")
 		}
 		index += s << (HilbertStartBit - hilbertBits)
 	}
 
 	index |= uint64(1) << (HilbertStartBit - r)
-	return index
+	return index, nil
 }
 
-func CellToChildren(index uint64, childResolution ...int) []uint64 {
+func CellToChildren(index uint64, childResolution ...int) ([]uint64, error) {
 	cell := Deserialize(index)
 	newResolution := cell.Resolution + 1
 	if len(childResolution) > 0 {
 		newResolution = childResolution[0]
 	}
-	children, err := ChildrenAt(index, newResolution)
-	if err != nil {
-		panicString(err.Error())
-	}
-	return children
+	return ChildrenAt(index, newResolution)
 }
 
-func CellToParent(index uint64, parentResolution ...int) uint64 {
+func CellToParent(index uint64, parentResolution ...int) (uint64, error) {
 	cell := Deserialize(index)
 	newResolution := cell.Resolution - 1
 	if len(parentResolution) > 0 {
 		newResolution = parentResolution[0]
 	}
-	parent, err := ParentAt(index, newResolution)
-	if err != nil {
-		panicString(err.Error())
-	}
-	return parent
+	return ParentAt(index, newResolution)
 }
 
-func GetRes0Cells() []uint64 {
+func GetRes0Cells() ([]uint64, error) {
 	return Res0Cells()
 }
 

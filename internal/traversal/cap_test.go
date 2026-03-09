@@ -42,7 +42,10 @@ func TestSphericalCap(t *testing.T) {
 	for _, f := range fixtures.SphericalCap {
 		cellID := parseHexCap(t, f.CellID)
 		targetRes := core.GetResolution(cellID)
-		result := core.Uncompact(traversal.SphericalCap(cellID, f.Radius), targetRes)
+		result, err := core.Uncompact(traversal.SphericalCap(cellID, f.Radius), targetRes)
+		if err != nil {
+			t.Fatalf("spherical cap uncompact: %v", err)
+		}
 		got := make([]string, len(result))
 		for i, cell := range result {
 			got[i] = core.U64ToHex(cell)

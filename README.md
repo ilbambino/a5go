@@ -35,7 +35,10 @@ import (
 
 func main() {
 	point := a5go.Point{Lon: -3.7038, Lat: 40.4168}
-	cell := point.Cell(6)
+	cell, err := point.Cell(6)
+	if err != nil {
+		panic(err)
+	}
 	fmt.Println(cell.Hex())
 	fmt.Println(cell.Center())
 }
@@ -45,6 +48,12 @@ Run tests:
 
 ```bash
 go test ./...
+```
+
+Run the local cross-implementation benchmark against `a5go-ext`:
+
+```bash
+go test -run ^$ -bench BenchmarkCompareImplementations -benchmem
 ```
 
 ## Comparing Against The Official TypeScript Build
@@ -94,3 +103,15 @@ The command compares:
 - `sphericalCap` in compacted and uncompacted form
 
 It exits non-zero on the first set of mismatches and prints the failing cases.
+
+## API Notes
+
+The public indexing and hierarchy entry points return errors for invalid input instead of panicking. In particular:
+
+- `Point.Cell`
+- `LonLatToCell`
+- `CellToParent`
+- `CellToChildren`
+- `GetRes0Cells`
+- `Res0Cells`
+- `Uncompact`

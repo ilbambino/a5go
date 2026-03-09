@@ -224,7 +224,11 @@ func compareResults(request compareRequest, response tsResponse) []string {
 
 	for i, tc := range request.LonLatCases {
 		ts := response.LonLatCases[i]
-		cellID := a5go.LonLatToCell(a5go.LonLat(tc.LonLat), tc.Resolution)
+		cellID, err := a5go.LonLatToCell(a5go.LonLat(tc.LonLat), tc.Resolution)
+		if err != nil {
+			failures = append(failures, fmt.Sprintf("lonLatToCell error for %s r=%d: %v", tc.Name, tc.Resolution, err))
+			continue
+		}
 		cellHex := a5go.U64ToHex(cellID)
 		if cellHex != ts.LonLatToCellHex {
 			failures = append(failures, fmt.Sprintf("lonLatToCell mismatch for %s r=%d: go=%s ts=%s", tc.Name, tc.Resolution, cellHex, ts.LonLatToCellHex))
@@ -261,7 +265,11 @@ func compareResults(request compareRequest, response tsResponse) []string {
 		}
 
 		targetRes := a5go.GetResolution(cellID)
-		flat := a5go.Uncompact(compacted, targetRes)
+		flat, err := a5go.Uncompact(compacted, targetRes)
+		if err != nil {
+			failures = append(failures, fmt.Sprintf("sphericalCap uncompact error for %s radius=%.2f: %v", tc.CellHex, tc.Radius, err))
+			continue
+		}
 		gotFlat := make([]string, len(flat))
 		for j, cell := range flat {
 			gotFlat[j] = a5go.U64ToHex(cell)

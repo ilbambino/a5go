@@ -5,6 +5,7 @@ import (
 	"a5go/internal/geometry"
 	"a5go/internal/lattice"
 	"a5go/internal/projections"
+	"fmt"
 	"math"
 )
 
@@ -18,9 +19,12 @@ var (
 	dodecahedron = projections.NewDodecahedronProjection()
 )
 
-func LonLatToCell(lonLat core.LonLat, resolution int) uint64 {
+func LonLatToCell(lonLat core.LonLat, resolution int) (uint64, error) {
+	if resolution < -1 || resolution > core.MaxResolution {
+		return 0, fmt.Errorf("resolution %d out of range", resolution)
+	}
 	if resolution == -1 {
-		return core.WorldCell
+		return core.WorldCell, nil
 	}
 	if resolution < core.FirstHilbertResolution {
 		return core.Serialize(lonLatToEstimate(lonLat, resolution))
@@ -46,14 +50,17 @@ func LonLatToCell(lonLat core.LonLat, resolution int) uint64 {
 	}, 0, len(samples))
 	for _, sample := range samples {
 		estimate := lonLatToEstimate(sample, resolution)
-		estimateKey := core.Serialize(estimate)
+		estimateKey, err := core.Serialize(estimate)
+		if err != nil {
+			return 0, err
+		}
 		if _, exists := estimateSet[estimateKey]; exists {
 			continue
 		}
 		estimateSet[estimateKey] = struct{}{}
 		distance := A5CellContainsPoint(estimate, lonLat)
 		if distance > 0 {
-			return estimateKey
+			return estimateKey, nil
 		}
 		cells = append(cells, struct {
 			cell     core.A5Cell

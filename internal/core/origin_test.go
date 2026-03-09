@@ -42,7 +42,7 @@ func TestOrigins(t *testing.T) {
 
 func TestFindNearestOrigin(t *testing.T) {
 	for _, origin := range Origins {
-		if nearest := FindNearestOrigin(origin.Axis); nearest != origin {
+		if nearest := FindNearestOrigin(origin.Axis); nearest.ID != origin.ID {
 			t.Fatalf("nearest origin mismatch for %d", origin.ID)
 		}
 	}
@@ -105,8 +105,8 @@ func TestHaversineAndConversions(t *testing.T) {
 
 	origin := Origins[0]
 	for quintant := 0; quintant < 5; quintant++ {
-		segment, _ := QuintantToSegment(quintant, origin)
-		roundTripQuintant, _ := SegmentToQuintant(segment, origin)
+		segment, _ := QuintantToSegment(quintant, &origin)
+		roundTripQuintant, _ := SegmentToQuintant(segment, &origin)
 		if roundTripQuintant != quintant {
 			t.Fatalf("round trip quintant mismatch")
 		}
@@ -114,7 +114,7 @@ func TestHaversineAndConversions(t *testing.T) {
 
 	for _, origin := range Origins {
 		nearest := FindNearestOrigin(origin.Axis)
-		if nearest != origin {
+		if nearest.ID != origin.ID {
 			t.Fatalf("expected origin to be nearest to itself")
 		}
 	}
@@ -123,9 +123,9 @@ func TestHaversineAndConversions(t *testing.T) {
 		Point  Spherical
 		Origin *Origin
 	}{
-		{Spherical{0, float64(PiOver5) / 2}, Origins[0]},
-		{Spherical{2 * float64(PiOver5), float64(PiOver5)}, Origins[3]},
-		{Spherical{0, math.Pi - float64(PiOver5)/2}, Origins[9]},
+		{Spherical{0, float64(PiOver5) / 2}, &Origins[0]},
+		{Spherical{2 * float64(PiOver5), float64(PiOver5)}, &Origins[3]},
+		{Spherical{0, math.Pi - float64(PiOver5)/2}, &Origins[9]},
 	}
 	for _, testCase := range boundaryChecks {
 		if IsNearestOrigin(testCase.Point, testCase.Origin) {

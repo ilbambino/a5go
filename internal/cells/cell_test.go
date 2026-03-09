@@ -19,7 +19,11 @@ type populatedPlacesFixture struct {
 }
 
 func TestCellValidation(t *testing.T) {
-	if got := cells.LonLatToCell(core.LonLat{0, 0}, -1); got != 0 {
+	got, err := cells.LonLatToCell(core.LonLat{0, 0}, -1)
+	if err != nil {
+		t.Fatalf("world cell lookup error: %v", err)
+	}
+	if got != 0 {
 		t.Fatalf("world cell mismatch: got %d", got)
 	}
 	if got := cells.CellToLonLat(0); got != (core.LonLat{0, 0}) {
@@ -69,7 +73,10 @@ func TestCellContainsOriginalPointForAllResolutions(t *testing.T) {
 			if resolution == core.MaxResolution || abs(testLonLat[1]) > 80 {
 				continue
 			}
-			cellID := cells.LonLatToCell(testLonLat, resolution)
+			cellID, err := cells.LonLatToCell(testLonLat, resolution)
+			if err != nil {
+				t.Fatalf("LonLatToCell error at resolution %d: %v", resolution, err)
+			}
 			_ = cells.CellToBoundary(cellID)
 			cell := core.Deserialize(cellID)
 			if cells.A5CellContainsPoint(cell, testLonLat) < 0 {

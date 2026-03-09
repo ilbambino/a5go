@@ -28,7 +28,10 @@ func GenerateWireframe(resolution int, segments ...int) [][]core.LonLat {
 		if resolution < core.FirstHilbertResolution {
 			wireframe = append(wireframe, cells.CellToBoundary(index, cells.CellBoundaryOptions{ClosedRing: false, Segments: segmentCount}))
 		} else {
-			children := core.CellToChildren(index, resolution)
+			children, err := core.CellToChildren(index, resolution)
+			if err != nil {
+				panic(err)
+			}
 			for _, child := range children {
 				wireframe = append(wireframe, cells.CellToBoundary(child, cells.CellBoundaryOptions{ClosedRing: false, Segments: segmentCount}))
 			}

@@ -3,6 +3,7 @@ package core
 import "a5go/internal/lattice"
 
 type Quaternion [4]float64
+type OrientationLayout [5]lattice.Orientation
 
 type Origin struct {
 	ID            int
@@ -10,7 +11,7 @@ type Origin struct {
 	Quat          Quaternion
 	InverseQuat   Quaternion
 	Angle         Radians
-	Orientation   []lattice.Orientation
+	Orientation   OrientationLayout
 	FirstQuintant int
 }
 

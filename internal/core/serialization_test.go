@@ -48,10 +48,13 @@ func TestSerialization(t *testing.T) {
 		t.Fatalf("removal mask mismatch")
 	}
 
-	origin0 := *Origins[0]
+	origin0 := Origins[0]
 	for i := range resolutionMasks {
 		input := A5Cell{Origin: &origin0, Segment: 4, S: 0, Resolution: i}
-		serialized := Serialize(input)
+		serialized, err := Serialize(input)
+		if err != nil {
+			t.Fatalf("serialize input: %v", err)
+		}
 		if fmt.Sprintf("%064b", serialized) != resolutionMasks[i] {
 			t.Fatalf("resolution mask mismatch at %d", i)
 		}
@@ -68,23 +71,30 @@ func TestSerialization(t *testing.T) {
 		}
 	}
 
-	if Serialize(A5Cell{Origin: &origin0, Segment: 4, S: 0, Resolution: MaxResolution - 1}) != 0b10 {
+	serializedMax, err := Serialize(A5Cell{Origin: &origin0, Segment: 4, S: 0, Resolution: MaxResolution - 1})
+	if err != nil {
+		t.Fatalf("serialize max: %v", err)
+	}
+	if serializedMax != 0b10 {
 		t.Fatalf("origin segment encoding mismatch")
 	}
 
-	mustPanicWith(t, "S (16) is too large for resolution level 3", func() {
-		Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 16, Resolution: 3})
-	})
-	mustPanicWith(t, "Resolution (31) is too large", func() {
-		Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: 31})
-	})
+	if _, err := Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 16, Resolution: 3}); err == nil {
+		t.Fatalf("expected serialize error for oversized S")
+	}
+	if _, err := Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: 31}); err == nil {
+		t.Fatalf("expected serialize error for oversized resolution")
+	}
 
 	var ids []string
 	testutil.LoadJSON(t, "../../testdata/test-ids.json", &ids)
 	for _, id := range ids {
 		serialized := parseHex(id)
 		deserialized := Deserialize(serialized)
-		reserialized := Serialize(deserialized)
+		reserialized, err := Serialize(deserialized)
+		if err != nil {
+			t.Fatalf("reserialize: %v", err)
+		}
 		if reserialized != serialized {
 			t.Fatalf("round trip mismatch for %s", id)
 		}
@@ -92,14 +102,28 @@ func TestSerialization(t *testing.T) {
 
 	for _, id := range ids {
 		cell := parseHex(id)
-		child := CellToChildren(cell)[0]
-		parent := CellToParent(child)
+		children, err := CellToChildren(cell)
+		if err != nil {
+			t.Fatalf("children: %v", err)
+		}
+		child := children[0]
+		parent, err := CellToParent(child)
+		if err != nil {
+			t.Fatalf("parent: %v", err)
+		}
 		if parent != cell {
 			t.Fatalf("parent/child round trip mismatch")
 		}
-		children := CellToChildren(cell)
+		children, err = CellToChildren(cell)
+		if err != nil {
+			t.Fatalf("children: %v", err)
+		}
 		for _, c := range children {
-			if CellToParent(c) != cell {
+			parent, err := CellToParent(c)
+			if err != nil {
+				t.Fatalf("parent: %v", err)
+			}
+			if parent != cell {
 				t.Fatalf("child parent mismatch")
 			}
 		}
@@ -108,40 +132,76 @@ func TestSerialization(t *testing.T) {
 	for _, id := range ids {
 		cell := parseHex(id)
 		currentResolution := GetResolution(cell)
-		children := CellToChildren(cell, currentResolution)
+		children, err := CellToChildren(cell, currentResolution)
+		if err != nil {
+			t.Fatalf("children at same resolution: %v", err)
+		}
 		if len(children) != 1 || children[0] != cell {
 			t.Fatalf("same-resolution children mismatch")
 		}
-		if CellToParent(cell, currentResolution) != cell {
+		parent, err := CellToParent(cell, currentResolution)
+		if err != nil {
+			t.Fatalf("parent at same resolution: %v", err)
+		}
+		if parent != cell {
 			t.Fatalf("same-resolution parent mismatch")
 		}
 	}
 
-	cell := Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: 0})
-	children := CellToChildren(cell)
+	cell, err := Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: 0})
+	if err != nil {
+		t.Fatalf("serialize res0: %v", err)
+	}
+	children, err := CellToChildren(cell)
+	if err != nil {
+		t.Fatalf("children res0: %v", err)
+	}
 	if len(children) != 5 {
 		t.Fatalf("res0 children count mismatch")
 	}
 	for _, child := range children {
-		if CellToParent(child) != cell {
+		parent, err := CellToParent(child)
+		if err != nil {
+			t.Fatalf("parent res0 child: %v", err)
+		}
+		if parent != cell {
 			t.Fatalf("non-hilbert parent mismatch")
 		}
 	}
 
-	cell = Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: 1})
-	children = CellToChildren(cell)
+	cell, err = Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: 1})
+	if err != nil {
+		t.Fatalf("serialize res1: %v", err)
+	}
+	children, err = CellToChildren(cell)
+	if err != nil {
+		t.Fatalf("children res1: %v", err)
+	}
 	if len(children) != 4 {
 		t.Fatalf("res1 children count mismatch")
 	}
 	for _, child := range children {
-		if CellToParent(child) != cell {
+		parent, err := CellToParent(child)
+		if err != nil {
+			t.Fatalf("parent res1 child: %v", err)
+		}
+		if parent != cell {
 			t.Fatalf("non-hilbert to hilbert parent mismatch")
 		}
 	}
 
-	cell = Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: 2})
-	parent := CellToParent(cell, 1)
-	children = CellToChildren(parent)
+	cell, err = Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: 2})
+	if err != nil {
+		t.Fatalf("serialize res2: %v", err)
+	}
+	parent, err := CellToParent(cell, 1)
+	if err != nil {
+		t.Fatalf("parent res2: %v", err)
+	}
+	children, err = CellToChildren(parent)
+	if err != nil {
+		t.Fatalf("children parent res2: %v", err)
+	}
 	if len(children) != 4 {
 		t.Fatalf("hilbert to non-hilbert child count mismatch")
 	}
@@ -158,15 +218,25 @@ func TestSerialization(t *testing.T) {
 	resolutions := []int{0, 1, 2, 3, 4}
 	cells := make([]uint64, len(resolutions))
 	for i, res := range resolutions {
-		cells[i] = Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: res})
+		cells[i], err = Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: res})
+		if err != nil {
+			t.Fatalf("serialize resolution chain: %v", err)
+		}
 	}
 	for i := 1; i < len(cells); i++ {
-		if CellToParent(cells[i]) != cells[i-1] {
+		parent, err := CellToParent(cells[i])
+		if err != nil {
+			t.Fatalf("chain parent: %v", err)
+		}
+		if parent != cells[i-1] {
 			t.Fatalf("resolution chain parent mismatch")
 		}
 	}
 	for i := 0; i < len(cells)-1; i++ {
-		children := CellToChildren(cells[i])
+		children, err := CellToChildren(cells[i])
+		if err != nil {
+			t.Fatalf("chain children: %v", err)
+		}
 		found := false
 		for _, child := range children {
 			if child == cells[i+1] {
@@ -178,13 +248,20 @@ func TestSerialization(t *testing.T) {
 		}
 	}
 
-	baseCell := Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: -1})
+	baseCell, err := Serialize(A5Cell{Origin: &origin0, Segment: 0, S: 0, Resolution: -1})
+	if err != nil {
+		t.Fatalf("serialize base cell: %v", err)
+	}
 	currentCells := []uint64{baseCell}
 	expectedCounts := []int{12, 60, 240, 960}
 	for resolution := 0; resolution < 4; resolution++ {
 		allChildren := make([]uint64, 0)
 		for _, cell := range currentCells {
-			allChildren = append(allChildren, CellToChildren(cell)...)
+			children, err := CellToChildren(cell)
+			if err != nil {
+				t.Fatalf("tree children: %v", err)
+			}
+			allChildren = append(allChildren, children...)
 		}
 		if len(allChildren) != expectedCounts[resolution] {
 			t.Fatalf("expected %d cells at resolution %d, got %d", expectedCounts[resolution], resolution, len(allChildren))
@@ -192,7 +269,10 @@ func TestSerialization(t *testing.T) {
 		currentCells = allChildren
 	}
 
-	res0Cells := GetRes0Cells()
+	res0Cells, err := GetRes0Cells()
+	if err != nil {
+		t.Fatalf("res0 cells: %v", err)
+	}
 	if len(res0Cells) != 12 {
 		t.Fatalf("res0 cell count mismatch")
 	}
@@ -224,18 +304,4 @@ func parseHex(hex string) uint64 {
 		panic(err)
 	}
 	return value
-}
-
-func mustPanicWith(t *testing.T, message string, fn func()) {
-	t.Helper()
-	defer func() {
-		value := recover()
-		if value == nil {
-			t.Fatalf("expected panic %q", message)
-		}
-		if got, ok := value.(string); !ok || got != message {
-			t.Fatalf("panic = %v want %q", value, message)
-		}
-	}()
-	fn()
 }

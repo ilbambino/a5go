@@ -1,35 +1,38 @@
 package core
 
-import "a5go/internal/lattice"
+import (
+	"a5go/internal/lattice"
+	"math"
+)
 
 var (
-	clockwiseFan = []lattice.Orientation{
+	clockwiseFan = OrientationLayout{
 		lattice.OrientationVU, lattice.OrientationUW, lattice.OrientationVW, lattice.OrientationVW, lattice.OrientationVW,
 	}
-	clockwiseStep = []lattice.Orientation{
+	clockwiseStep = OrientationLayout{
 		lattice.OrientationWU, lattice.OrientationUW, lattice.OrientationVW, lattice.OrientationVU, lattice.OrientationUW,
 	}
-	counterStep = []lattice.Orientation{
+	counterStep = OrientationLayout{
 		lattice.OrientationWU, lattice.OrientationUV, lattice.OrientationWV, lattice.OrientationWU, lattice.OrientationUW,
 	}
-	counterJump = []lattice.Orientation{
+	counterJump = OrientationLayout{
 		lattice.OrientationVU, lattice.OrientationUV, lattice.OrientationWV, lattice.OrientationWU, lattice.OrientationUW,
 	}
-	quintantOrientations = [][]lattice.Orientation{
+	quintantOrientations = [12]OrientationLayout{
 		clockwiseFan, counterJump, counterStep,
 		clockwiseStep, counterStep, counterJump,
 		counterStep, clockwiseStep, clockwiseStep,
 		clockwiseStep, counterJump, counterJump,
 	}
-	quintantFirst = []int{4, 2, 3, 2, 0, 4, 3, 2, 2, 0, 3, 0}
-	originOrder   = []int{0, 1, 2, 4, 3, 5, 7, 8, 6, 11, 10, 9}
+	quintantFirst = [12]int{4, 2, 3, 2, 0, 4, 3, 2, 2, 0, 3, 0}
+	originOrder   = [12]int{0, 1, 2, 4, 3, 5, 7, 8, 6, 11, 10, 9}
 )
 
-var Origins = func() []*Origin {
-	origins := make([]*Origin, 0, 12)
+var Origins = func() [12]Origin {
+	var generated [12]Origin
 	nextID := 0
 	addOrigin := func(axis Spherical, angle Radians, quaternion Quaternion) {
-		origin := &Origin{
+		generated[nextID] = Origin{
 			ID:            nextID,
 			Axis:          axis,
 			Quat:          quaternion,
@@ -38,7 +41,6 @@ var Origins = func() []*Origin {
 			Orientation:   quintantOrientations[nextID],
 			FirstQuintant: quintantFirst[nextID],
 		}
-		origins = append(origins, origin)
 		nextID++
 	}
 
@@ -47,79 +49,49 @@ var Origins = func() []*Origin {
 		alpha := float64(i) * float64(TwoPiOver5)
 		alpha2 := alpha + float64(PiOver5)
 		addOrigin(Spherical{alpha, float64(InterhedralAngle)}, PiOver5, Quaternions[i+1])
-		addOrigin(Spherical{alpha2, mathPi - float64(InterhedralAngle)}, PiOver5, Quaternions[(i+3)%5+6])
+		addOrigin(Spherical{alpha2, math.Pi - float64(InterhedralAngle)}, PiOver5, Quaternions[(i+3)%5+6])
 	}
-	addOrigin(Spherical{0, mathPi}, 0, Quaternions[11])
+	addOrigin(Spherical{0, math.Pi}, 0, Quaternions[11])
 
-	for i := 0; i < len(origins); i++ {
-		for j := i + 1; j < len(origins); j++ {
-			if originOrderIndex(origins[j].ID) < originOrderIndex(origins[i].ID) {
-				origins[i], origins[j] = origins[j], origins[i]
-			}
-		}
+	var ordered [12]Origin
+	for newID, oldID := range originOrder {
+		ordered[newID] = generated[oldID]
+		ordered[newID].ID = newID
 	}
-	for i, origin := range origins {
-		origin.ID = i
-	}
-	return origins
+	return ordered
 }()
 
-const mathPi = 3.14159265358979323846264338327950288419716939937510
-
 func QuintantToSegment(quintant int, origin *Origin) (int, lattice.Orientation) {
-	layout := origin.Orientation
 	step := 1
-	if sameOrientationLayout(layout, clockwiseFan) || sameOrientationLayout(layout, clockwiseStep) {
+	if origin.Orientation == clockwiseFan || origin.Orientation == clockwiseStep {
 		step = -1
 	}
 	delta := (quintant - origin.FirstQuintant + 5) % 5
 	faceRelativeQuintant := (step*delta + 5) % 5
-	orientation := layout[faceRelativeQuintant]
+	orientation := origin.Orientation[faceRelativeQuintant]
 	segment := (origin.FirstQuintant + faceRelativeQuintant) % 5
 	return segment, orientation
 }
 
 func SegmentToQuintant(segment int, origin *Origin) (int, lattice.Orientation) {
-	layout := origin.Orientation
 	step := 1
-	if sameOrientationLayout(layout, clockwiseFan) || sameOrientationLayout(layout, clockwiseStep) {
+	if origin.Orientation == clockwiseFan || origin.Orientation == clockwiseStep {
 		step = -1
 	}
 	faceRelativeQuintant := (segment - origin.FirstQuintant + 5) % 5
-	orientation := layout[faceRelativeQuintant]
+	orientation := origin.Orientation[faceRelativeQuintant]
 	quintant := (origin.FirstQuintant + step*faceRelativeQuintant + 5) % 5
 	return quintant, orientation
 }
 
-func sameOrientationLayout(a, b []lattice.Orientation) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func originOrderIndex(id int) int {
-	for i, candidate := range originOrder {
-		if candidate == id {
-			return i
-		}
-	}
-	return len(originOrder)
-}
-
 func FindNearestOrigin(point Spherical) *Origin {
-	minDistance := 1e9
-	nearest := Origins[0]
-	for _, origin := range Origins {
-		distance := Haversine(point, origin.Axis)
+	minDistance := math.Inf(1)
+	nearest := &Origins[0]
+	for i := range Origins {
+		distance := Haversine(point, Origins[i].Axis)
 		if distance < minDistance {
 			minDistance = distance
-			nearest = origin
+			nearest = &Origins[i]
 		}
 	}
 	return nearest

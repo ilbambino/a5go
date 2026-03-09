@@ -21,7 +21,11 @@ func TestGridDisk(t *testing.T) {
 	for _, f := range fixtures {
 		cellID := parseHexLocal(f.CellID)
 		targetRes := core.GetResolution(cellID)
-		result := hexStrings(core.Uncompact(GridDisk(cellID, f.K), targetRes))
+		flat, err := core.Uncompact(GridDisk(cellID, f.K), targetRes)
+		if err != nil {
+			t.Fatalf("gridDisk uncompact: %v", err)
+		}
+		result := hexStrings(flat)
 		if len(result) != len(f.Cells) {
 			t.Fatalf("gridDisk length mismatch")
 		}
@@ -50,7 +54,11 @@ func TestGridDiskVertex(t *testing.T) {
 		sort.Slice(expected, func(i, j int) bool {
 			return pad(expected[i], 20) < pad(expected[j], 20)
 		})
-		result := hexStrings(core.Uncompact(GridDiskVertex(cellID, f.K), targetRes))
+		flat, err := core.Uncompact(GridDiskVertex(cellID, f.K), targetRes)
+		if err != nil {
+			t.Fatalf("gridDiskVertex uncompact: %v", err)
+		}
+		result := hexStrings(flat)
 		if len(result) != len(expected) {
 			t.Fatalf("gridDiskVertex length mismatch")
 		}

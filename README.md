@@ -1,5 +1,7 @@
 # a5go
 
+This package is archived and not mantained. You can use [corewood-tech/a5go](https://github.com/corewood-tech/a5go) instead of this one. New APIs and changes in `a5` won't be in this package.
+
 Go port of the [`a5`](https://github.com/felixpalmer/a5) spatial index from the upstream TypeScript reference implementation.
 
 The port was done as a direct translation of the existing implementation and fixtures, then refactored toward a more idiomatic Go API. The root `a5go` package is the intended public surface; implementation packages now live under `internal/`.
